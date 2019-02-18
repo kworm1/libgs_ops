@@ -1,15 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Aug 11 17:13:45 2017
+pytest for scheduler
 
-py.test module to test the "scheduler" module
+:author: Kjetil Wormnes
+:date: 2017-08-11
 
-
-.. todo::
-    Also implement integration test that tests the schedule executing
-
-
-@author: kjetil
 """
 
 
