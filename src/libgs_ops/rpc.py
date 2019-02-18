@@ -35,7 +35,12 @@ libgs_ops.rpc
 :author: Kjetil Wormnes
 """
 
-from xmlrpc.client import ServerProxy, Transport
+import sys
+
+if sys.version_info >= (3,):
+    from xmlrpc.client import ServerProxy, Transport
+else:
+    from xmlrpclib import ServerProxy, Transport
 
 
 class RPCClient(ServerProxy):

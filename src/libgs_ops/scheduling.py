@@ -232,6 +232,11 @@ Module Reference
 ----------------
 """
 
+import sys
+
+if sys.version_info >= (3,):
+    basestring = str
+
 import pandas as pd
 from pandas import DataFrame
 import numpy as np
@@ -351,7 +356,7 @@ class Communication(dict):
 
         """
 
-        if isinstance(cmd, str):
+        if isinstance(cmd, basestring):
             self._check_cmdstr(cmd)
             hexstr = cmd
             barray = bytearray([int(x, 16) for x in cmd.split('-')])
@@ -724,7 +729,7 @@ class CommsPass(object):
             self.comms.append(comm)
 
 
-        elif isinstance(comm, str) or isinstance(comm, bytearray):
+        elif isinstance(comm, basestring) or isinstance(comm, bytearray):
             self.comms.append(Communication(comm, **kwargs))
         else:
             raise Error("Invalid type for comms object: %s"%(type(comm)))
