@@ -80,6 +80,8 @@ Or you can even specify a TLE directly (only really useful for testing):
 >>> tle = \"""0 ISS (ZARYA)
 >>> 1 25544U 98067A   17284.88510854  .00004604  00000-0  76690-4 0  9997
 >>> 2 25544  51.6422 176.5756 0004586  12.7905  64.0182 15.54151166 79907\"""
+import logging
+import sys
 >>> p = Propagator(tles=tle, gs_lat = GS_LAT, gs_lon = GS_LON, gs_elev = GS_ELEV)
 
 
@@ -221,7 +223,7 @@ import re
 from functools import wraps
 
 
-def _print( *arg, **kwarg):
+def _print(*arg, **kwarg):
     """
         Function to print.
 
@@ -237,10 +239,10 @@ def _print( *arg, **kwarg):
     print(*arg, **kwarg)
 
 
-
 class Error(Exception):
     """ A generic exception """
     pass
+
 
 try:
     import matplotlib.pyplot as plt
@@ -248,7 +250,11 @@ try:
 except:
     _HAS_MATPLOTLIB = False
 
-from collections import Iterable
+import sys
+if sys.version_info[0] == 2 or (sys.version_info[1] < 10): # below 3.10
+    from collections import Iterable
+else:
+    from collections.abc import Iterable
 
 import logging
 log = logging.getLogger('libgs_ops-log')
