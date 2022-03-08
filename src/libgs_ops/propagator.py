@@ -252,7 +252,7 @@ except:
     _HAS_MATPLOTLIB = False
 
 import logging
-if sys.version_info[0] == 2 or (sys.version_info[1] < 10):  # below 3.10
+if sys.version_info[0] == 2 or (sys.version_info[1] < 9):  # below 3.10
     from collections import Iterable
 else:
     from collections.abc import Iterable
@@ -614,16 +614,13 @@ class TLEDb(object):
         if tles is not None:
 
             if type(tles) is str:
-                #parse string
+                # parse string
 
                 self.tles = self._parse_tlestr(tles)
-
 
             elif type(tles) is dict:
                 # load directly
                 self.tles = tles
-
-
 
         elif fname is not None:
             # load from file
@@ -1044,7 +1041,7 @@ class Propagator(object):
 
         if when is None:
             when = [datetime.utcnow().strftime('%Y/%m/%d %H:%M:%S')]
-        elif (sys.version_info[0] == 2 or (sys.version_info[1] < 10)) and isinstance(when, basestring):
+        elif (sys.version_info[0] == 2 or (sys.version_info[1] < 9)) and isinstance(when, basestring):
             when = [when]
         elif not isinstance(when, Iterable):
             when = [when]
@@ -1237,7 +1234,7 @@ class Propagator(object):
 
         if when is None:
             obs.date = datetime.utcnow().strftime('%Y/%m/%d %H:%M:%S')
-        elif (sys.version_info[0] == 2 or (sys.version_info[1] < 10)) and isinstance(when, unicode):
+        elif (sys.version_info[0] == 2 or (sys.version_info[1] < 9)) and isinstance(when, unicode):
             obs.date = when.encode()
         else:
             obs.date = when
