@@ -59,7 +59,7 @@ A TLE that is not in the database will fail:
 >>> p.get_tle(40000)
 KeyError: 40000
 
-Or you can connect directly to spacetrack if you have login credentials. Note hat uname, pwd are your Space-Track.org 
+Or you can connect directly to spacetrack if you have login credentials. Note hat uname, pwd are your Space-Track.org
 username and password. GS_LAT, GS_LON, GS_ELEV are the coordinates of your ground station.
 
 >>> p = Propagator(api=SpaceTrackAPI(uname, pwd), gs_lat = GS_LAT, gs_lon = GS_LON, gs_elev = GS_ELEV)
@@ -80,6 +80,8 @@ Or you can even specify a TLE directly (only really useful for testing):
 >>> tle = \"""0 ISS (ZARYA)
 >>> 1 25544U 98067A   17284.88510854  .00004604  00000-0  76690-4 0  9997
 >>> 2 25544  51.6422 176.5756 0004586  12.7905  64.0182 15.54151166 79907\"""
+import logging
+import sys
 >>> p = Propagator(tles=tle, gs_lat = GS_LAT, gs_lon = GS_LON, gs_elev = GS_ELEV)
 
 
@@ -219,9 +221,10 @@ import numpy as np
 from lxml import html
 import re
 from functools import wraps
+import sys
 
 
-def _print( *arg, **kwarg):
+def _print(*arg, **kwarg):
     """
         Function to print.
 
@@ -237,10 +240,10 @@ def _print( *arg, **kwarg):
     print(*arg, **kwarg)
 
 
-
 class Error(Exception):
     """ A generic exception """
     pass
+
 
 try:
     import matplotlib.pyplot as plt
@@ -248,12 +251,14 @@ try:
 except:
     _HAS_MATPLOTLIB = False
 
-from collections import Iterable
-
 import logging
+if sys.version_info[0] == 2 or (sys.version_info[1] < 9):  # below 3.10
+    from collections import Iterable
+else:
+    from collections.abc import Iterable
+
 log = logging.getLogger('libgs_ops-log')
 log.addHandler(logging.NullHandler())
-
 
 
 # Decorator to more easily tag matplotlib functions
@@ -269,7 +274,6 @@ def _mpl(func):
     return wrapper
 
 
-
 def _tstamp_array(start, end, dt=None):
     """
         Helper function to create an array of ephem.Date
@@ -278,15 +282,14 @@ def _tstamp_array(start, end, dt=None):
     t1 = ephem.Date(end)
 
     if dt is None:
-        t_array = np.linspace(t0,t1, 100)
+        t_array = np.linspace(t0, t1, 100)
     else:
-        dt_days = dt/86400.0
-        t_array = np.arange(t0,t1,dt_days)
+        dt_days = dt / 86400.0
+        t_array = np.arange(t0, t1, dt_days)
 
     t_array2 = [ephem.Date(t) for t in t_array]
 
     return t_array2
-
 
 
 @_mpl
@@ -305,27 +308,25 @@ def mpl_plot_pass(angs, vishor=10):
 
     """
 
-    angs = angs[angs.el>vishor]
+    angs = angs[angs.el > vishor]
 
     if angs.empty:
         raise Error("Pass never comes above visiblity horizon")
 
     plot_fig = plt.gcf()
     ax = plot_fig.add_subplot(111, projection='polar')
-    ax.set_ylim([0,90])
+    ax.set_ylim([0, 90])
 
-
-    az = angs.az/180.0*pi
+    az = angs.az / 180.0 * pi
     el = 90 - angs.el
 
-    ax.plot(az,el, 'b', linewidth=2)
+    ax.plot(az, el, 'b', linewidth=2)
 
     # plot visibility horizon
     min_el = vishor
-    h_az = np.linspace(0,2*pi, 100)
-    h_el = [90-min_el]*len(h_az)
+    h_az = np.linspace(0, 2 * pi, 100)
+    h_el = [90 - min_el] * len(h_az)
     ax.plot(h_az, h_el, 'r')
-
 
     # print timestamps for start/end pass
 
@@ -335,18 +336,15 @@ def mpl_plot_pass(angs, vishor=10):
 
     kaz = np.array([angs.iloc[0].az, maxe.az, angs.iloc[-1].az])
     kel = np.array([angs.iloc[0].el, maxe.el, angs.iloc[-1].el])
-    kt  = np.array([angs.iloc[0].tstamp_str, maxe.tstamp_str, angs.iloc[-1].tstamp_str])
+    kt = np.array([angs.iloc[0].tstamp_str, maxe.tstamp_str, angs.iloc[-1].tstamp_str])
 
-    ax.plot(kaz/180.0*pi, 90-kel, 'b.', markersize=10)
+    ax.plot(kaz / 180.0 * pi, 90 - kel, 'b.', markersize=10)
     for i in range(0, len(kaz)):
-        ax.text(kaz[i]/180.0*pi, 90-kel[i], kt[i], color='b', weight='bold')
-
+        ax.text(kaz[i] / 180.0 * pi, 90 - kel[i], kt[i], color='b', weight='bold')
 
     ax.set_yticklabels([])
     ax.set_theta_zero_location("N")
     ax.set_theta_direction(-1)
-
-
 
 
 class SpaceTrackAPI(object):
@@ -360,14 +358,14 @@ class SpaceTrackAPI(object):
         the format used by :class:`.Propagator`.
     """
 
-    ST_URL='https://www.space-track.org'
+    ST_URL = 'https://www.space-track.org'
 
     def __init__(self, uname, pwd):
         """
         :param uname: space-track.org user name
         :param pwd: space-track.org password
         """
-        r=requests.post(self.ST_URL+"/ajaxauth/login", json={'identity':uname, 'password':pwd})
+        r = requests.post(self.ST_URL + "/ajaxauth/login", json={'identity': uname, 'password': pwd})
 
         #
         # Raise error if login request fails
@@ -395,7 +393,7 @@ class SpaceTrackAPI(object):
 
         """
 
-        r = requests.get(self.ST_URL+uri, cookies=self.cookies)
+        r = requests.get(self.ST_URL + uri, cookies=self.cookies)
         r.raise_for_status()
         return r.content
 
@@ -508,21 +506,20 @@ class SpaceTrackAPI(object):
 
         URI = "/basicspacedata/query/class/tle_latest/format/3le/ordinal/1"
 
-        for k,v in params.items():
-            URI += "/" + k +"/"+v
+        for k, v in params.items():
+            URI += "/" + k + "/" + v
 
-        log.debug("Downloading TLE list using URI: %s"%(URI))
+        log.debug("Downloading TLE list using URI: %s" % (URI))
 
-        r = requests.get(self.ST_URL+URI, cookies=self.cookies)
+        r = requests.get(self.ST_URL + URI, cookies=self.cookies)
         r.raise_for_status()
 
         return r.content
 
-
     def get_tle_sets(self, name):
         """
             A shortcut to some predefined sets of satellites. 
-            
+
             Avaliable sets are:
 
             ============== ============================================================
@@ -540,7 +537,7 @@ class SpaceTrackAPI(object):
         """
 
         if name == "amateur_all":
-            l =  self.query_tle({
+            l = self.query_tle({
                 'favorites': 'Amateur',
                 'EPOCH': '>now-30'})
 
@@ -553,10 +550,9 @@ class SpaceTrackAPI(object):
                 'PERIOD': '1430--1450'})
 
         else:
-            raise Error('Set named %s is not defined'%(name))
+            raise Error('Set named %s is not defined' % (name))
 
         return l
-        
 
     def get_tles(self, nids):
         """
@@ -576,21 +572,21 @@ class SpaceTrackAPI(object):
 
 
         """
-        idstr=",".join(str(x) for x in nids)
+        idstr = ",".join(str(x) for x in nids)
 
-        tlestr = self.query_tle({'NORAD_CAT_ID':idstr})#.decode()
+        tlestr = self.query_tle({'NORAD_CAT_ID': idstr})  # .decode()
         tlestr = tlestr.strip().replace(b'\r', b'').split(b'\n')
-
 
         L0 = tlestr[0::3]
         L1 = tlestr[1::3]
         L2 = tlestr[2::3]
-        tle_list = zip(L0,L1,L2)
+        tle_list = zip(L0, L1, L2)
         nids = [int(x.split(b' ')[1]) for x in L2]
 
         tles = dict(zip(nids, tle_list))
 
         return tles
+
 
 class TLEDb(object):
     """
@@ -615,20 +611,16 @@ class TLEDb(object):
         if (fname is not None) and (tles is not None):
             raise Error("only enter fname OR tles")
 
-
         if tles is not None:
 
             if type(tles) is str:
-                #parse string
+                # parse string
 
                 self.tles = self._parse_tlestr(tles)
-
 
             elif type(tles) is dict:
                 # load directly
                 self.tles = tles
-
-
 
         elif fname is not None:
             # load from file
@@ -829,7 +821,7 @@ class Propagator(object):
 
         if ext_tles is None:
             # Sort the list of nids. This is done for compatibility with the get_tle method that enforces a sort on the TLE list.
-            self.nids_to_track.sort()
+            self.nids_to_track = sorted(self.nids_to_track)
 
             self.tles = self.api.get_tles(self.nids_to_track)
             self.nids_to_track = list(self.tles.keys())
@@ -867,7 +859,7 @@ class Propagator(object):
 
 
         # Sort the list of nids. This is done for compatibility with the get_tle method that enforces a sort on the TLE list.
-        self.nids_to_track.sort()
+        self.nids_to_track = sorted(self.nids_to_track)
 
         #
         # Save time for timeout calculation
@@ -972,8 +964,8 @@ class Propagator(object):
 
 
         tles = self.tles.keys()
-        tles.sort()
-        self.nids_to_track.sort()
+        tles = sorted(tles)
+        self.nids_to_track = sorted(self.nids_to_track)
 
         if tles != self.nids_to_track:
             raise Error('Unexpected Error')
@@ -1049,7 +1041,7 @@ class Propagator(object):
 
         if when is None:
             when = [datetime.utcnow().strftime('%Y/%m/%d %H:%M:%S')]
-        elif isinstance(when, basestring):
+        elif (sys.version_info[0] == 2 or (sys.version_info[1] < 9)) and isinstance(when, basestring):
             when = [when]
         elif not isinstance(when, Iterable):
             when = [when]
@@ -1242,7 +1234,7 @@ class Propagator(object):
 
         if when is None:
             obs.date = datetime.utcnow().strftime('%Y/%m/%d %H:%M:%S')
-        elif isinstance(when, unicode):
+        elif (sys.version_info[0] == 2 or (sys.version_info[1] < 9)) and isinstance(when, unicode):
             obs.date = when.encode()
         else:
             obs.date = when
@@ -1383,7 +1375,7 @@ class Propagator(object):
         p_set  = angs[angs.el > 0].iloc[-1]
 
         if  len(key_els) > 0:
-            key_els.sort()
+            key_els = sorted(key_els)
             key_els = np.unique([int(k) for k in key_els])
 
             keypoints = [None] * len(key_els) * 2
